@@ -1,0 +1,8 @@
+streamlit
+pandas
+plotly
+numpy
+python-dateutil
+mysql-connector-python
+psycopg2-binary
+python-dotenv
