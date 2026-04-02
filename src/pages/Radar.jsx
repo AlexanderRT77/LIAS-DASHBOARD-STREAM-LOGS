@@ -60,7 +60,7 @@ export default function Radar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [errorInfo, setErrorInfo] = useState('')
 
-  const fetchNews = async (query = 'artificial intelligence AND health OR AI healthcare') => {
+  const fetchNews = async (query = '(AI OR artificial intelligence) AND (health OR medical OR medicine OR clinical)') => {
     setLoadingNews(true)
     setErrorInfo('')
     try {
