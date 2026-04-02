@@ -1,14 +1,1 @@
-# Ambientes Virtuais
-.venv/
-venv/
-env/
-
-# Arquivos de Cache do Python
-__pycache__/
-*.pyc
-
-# Variáveis de Ambiente e Segredos
-.env
-
-# Arquivos do sistema operativo
-.DS_Store
+node_modules

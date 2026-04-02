@@ -1,0 +1,77 @@
+{
+  "atividades": [
+    {
+      "id": 1,
+      "titulo": "Aba1-Dashboard-Holografico3D",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:25.070762"
+    },
+    {
+      "id": 2,
+      "titulo": "Aba2-Rankings-IndustrialVulcanico",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:27.529963"
+    },
+    {
+      "id": 3,
+      "titulo": "Aba3-PubMed-GlassmorphismOrganico",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:29.746810"
+    },
+    {
+      "id": 4,
+      "titulo": "Aba4-Upload-TopografiaDigital",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:31.988739"
+    },
+    {
+      "id": 5,
+      "titulo": "Aba5-MetricasLive-GeometriaVibrante",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:34.449604"
+    },
+    {
+      "id": 6,
+      "titulo": "Aba6-ComparacaoIAs-BioDigital",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:38.548565"
+    },
+    {
+      "id": 7,
+      "titulo": "Aba7-RadarNovidades-FuturismoLiquido",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:40.602403"
+    },
+    {
+      "id": 8,
+      "titulo": "Aba8-BaseHistorica-BlueprintIndustrial",
+      "estado": "PENDENTE",
+      "plano_validado": false,
+      "responsavel": "Executor-Frontend",
+      "pre_requisitos": [],
+      "criado_em": "2026-03-29T18:41:44.428130"
+    }
+  ],
+  "integrantes": []
+}

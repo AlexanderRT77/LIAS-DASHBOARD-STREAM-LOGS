@@ -1,0 +1,2 @@
+{"remetente": "SandecoMaestro", "categoria": "COMUNICADO_GERAL", "conteudo": "INICIO: Redesign visual das 8 abas do LIAS Dashboard conforme prompt de design e imagens Nitro. Modo PARALELO. Todas as funcionalidades existentes devem ser preservadas.", "enviado_em": "2026-03-29T18:42:15.509013"}
+{"remetente": "SandecoMaestro", "categoria": "COMUNICADO_GERAL", "conteudo": "TODAS 8 ATIVIDADES CONCLUIDAS: Temas atualizados, CSS decorativo aplicado, badges renomeados, Plotly light-mode suportado.", "enviado_em": "2026-03-29T18:57:19.527403"}
