@@ -2,7 +2,7 @@
 // Isso faz o pedido pelo servidor, contornando a trava de navegador do plano gratuito.
 
 export default async function handler(req, res) {
-  const { query = 'artificial intelligence AND health' } = req.query;
+  const { query = '(artificial intelligence OR AI) AND (health OR medicine OR medical OR clinical)' } = req.query;
   const apiKey = process.env.VITE_NEWS_API_KEY;
 
   if (!apiKey) {
