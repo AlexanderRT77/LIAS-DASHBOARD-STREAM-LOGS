@@ -64,19 +64,11 @@ export default function Radar() {
     setLoadingNews(true)
     setErrorInfo('')
     try {
-      const apiKey = import.meta.env.VITE_NEWS_API_KEY
-      if (!apiKey) throw new Error('VITE_NEWS_API_KEY não configurada no .env')
-
-      const res = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=pt&pageSize=10&apiKey=${apiKey}`)
+      // Usamos a ponte de API (/api/news) para contornar a trava de navegador do plano gratuito
+      const res = await fetch(`/api/news?query=${encodeURIComponent(query)}`)
+      const data = await res.json()
       
-      // Fallback para inglês se não tiver PT
-      let data = await res.json()
       if (data.status === 'error') throw new Error(data.message)
-        
-      if (!data.articles || data.articles.length === 0) {
-        const resEn = await fetch(`https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&sortBy=publishedAt&language=en&pageSize=10&apiKey=${apiKey}`)
-        data = await resEn.json()
-      }
 
       const formatted = (data.articles || []).filter(a => a.title && a.source?.name).map(a => ({
         title: a.title,
