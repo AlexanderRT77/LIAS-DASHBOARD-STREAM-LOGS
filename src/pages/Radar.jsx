@@ -87,7 +87,7 @@ export default function Radar() {
       setNews(formatted)
     } catch (err) {
       console.error(err)
-      setErrorInfo('Falha ao buscar notícias. Verifique a API Key (NewsAPI) no .env.')
+      setErrorInfo(`Erro NewsAPI: ${err.message}`)
     } finally {
       setLoadingNews(false)
     }
