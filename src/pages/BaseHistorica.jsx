@@ -1,22 +1,25 @@
 import { useSupabaseData } from '../hooks/useSupabaseData'
 
 const mockRecords = [
-  { record_id: 'REC-2931', specialty: 'Cardiologia', model_name: 'GPT-4o', confidence: 99.2, status: 'Concluído', diagnosed_at: '2024-04-02T10:15:00' },
-  { record_id: 'REC-2930', specialty: 'Neurologia', model_name: 'Claude 3.5', confidence: 98.7, status: 'Concluído', diagnosed_at: '2024-04-02T09:42:00' },
-  { record_id: 'REC-2929', specialty: 'Oncologia', model_name: 'Med-PaLM', confidence: 96.4, status: 'Concluído', diagnosed_at: '2024-04-01T18:20:00' },
-  { record_id: 'REC-2928', specialty: 'Radiologia', model_name: 'Gemini Pro', confidence: 99.8, status: 'Concluído', diagnosed_at: '2024-04-01T16:15:00' },
-  { record_id: 'REC-2927', specialty: 'Dermatologia', model_name: 'Llama 3', confidence: 94.1, status: 'Concluído', diagnosed_at: '2024-04-01T14:05:00' },
-  { record_id: 'REC-2926', specialty: 'Pneumologia', model_name: 'GPT-4o', confidence: 97.6, status: 'Concluído', diagnosed_at: '2024-04-01T11:30:00' },
-  { record_id: 'REC-2925', specialty: 'Endocrinologia', model_name: 'Claude 3.5', confidence: 95.3, status: 'Concluído', diagnosed_at: '2024-03-31T22:10:00' },
-  { record_id: 'REC-2924', specialty: 'Cardiologia', model_name: 'Med-PaLM', confidence: 98.9, status: 'Concluído', diagnosed_at: '2024-03-31T19:45:00' },
+  { record_id: 'REC-2931', specialty: 'Cardiologia', model_name: 'Antigravity', confidence: 99.2, status: 'Concluído', diagnosed_at: '2024-04-02T10:15:00' },
+  { record_id: 'REC-2930', specialty: 'Neurologia', model_name: 'Claude', confidence: 98.7, status: 'Concluído', diagnosed_at: '2024-04-02T09:42:00' },
+  { record_id: 'REC-2929', specialty: 'Oncologia', model_name: 'Gemini', confidence: 96.4, status: 'Concluído', diagnosed_at: '2024-04-01T18:20:00' },
+  { record_id: 'REC-2928', specialty: 'Radiologia', model_name: 'Perplexity', confidence: 99.8, status: 'Concluído', diagnosed_at: '2024-04-01T16:15:00' },
+  { record_id: 'REC-2927', specialty: 'Dermatologia', model_name: 'DeepSeek', confidence: 94.1, status: 'Concluído', diagnosed_at: '2024-04-01T14:05:00' },
+  { record_id: 'REC-2926', specialty: 'Pneumologia', model_name: 'Manus', confidence: 97.6, status: 'Concluído', diagnosed_at: '2024-04-01T11:30:00' },
+  { record_id: 'REC-2925', specialty: 'Endocrinologia', model_name: 'Grok', confidence: 95.3, status: 'Concluído', diagnosed_at: '2024-03-31T22:10:00' },
+  { record_id: 'REC-2924', specialty: 'Cardiologia', model_name: 'Chat Z.Ai', confidence: 98.9, status: 'Concluído', diagnosed_at: '2024-03-31T19:45:00' },
 ]
 
 const modelBadgeColor = {
-  'GPT-4o': 'badge-primary',
-  'Claude 3.5': 'badge-tertiary',
-  'Med-PaLM': 'badge-warning',
-  'Gemini Pro': 'badge-success',
-  'Llama 3': 'badge-primary',
+  'Antigravity': 'badge-primary',
+  'Claude': 'badge-tertiary',
+  'Gemini': 'badge-warning',
+  'DeepSeek': 'badge-success',
+  'Perplexity': 'badge-primary',
+  'Manus': 'badge-tertiary',
+  'Grok': 'badge-warning',
+  'Chat Z.Ai': 'badge-success',
 }
 
 export default function BaseHistorica() {
@@ -26,6 +29,37 @@ export default function BaseHistorica() {
     ascending: false,
     realtime: true,
   })
+
+  const exportToCSV = () => {
+    if (!records || records.length === 0) return
+    const headers = ['Data', 'ID_Registro', 'Especialidade', 'Modelo', 'Confianca', 'Status']
+    const csvRows = []
+    csvRows.push(headers.join(','))
+
+    records.forEach((r, i) => {
+      const date = r.diagnosed_at ? new Date(r.diagnosed_at).toLocaleString('pt-BR') : ''
+      const recordId = r.record_id || r.id || `REC-${String(i).padStart(4, '0')}`
+      const row = [
+        `"${date}"`,
+        `"${recordId}"`,
+        `"${r.specialty || ''}"`,
+        `"${r.model_name || ''}"`,
+        r.confidence || '',
+        `"${r.status || ''}"`
+      ]
+      csvRows.push(row.join(','))
+    })
+
+    const csvContent = csvRows.join('\n')
+    const blob = new Blob([`\ufeff${csvContent}`], { type: 'text/csv;charset=utf-8;' }) // \ufeff added for excel utf-8
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `relatorio_clinico_${new Date().toISOString().substring(0,10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div>
@@ -59,7 +93,7 @@ export default function BaseHistorica() {
       <div className="card animate-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
         <div className="section-header">
           <h3 className="title-lg">Registros de Diagnóstico</h3>
-          <button className="btn btn-outline">
+          <button className="btn btn-outline" onClick={exportToCSV} disabled={loading || records.length === 0}>
             <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>download</span>
             Exportar Lote
           </button>

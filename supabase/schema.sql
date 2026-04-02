@@ -134,14 +134,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE inference_logs;
 -- ═══════════════════════════════════════════════════════════
 
 INSERT INTO ai_models (name, vendor, version, specialty) VALUES
-  ('GPT-4o Health', 'OpenAI', '4o', 'Multi-Especialidade'),
-  ('Claude 3.5 Sonnet', 'Anthropic', '3.5', 'Multi-Especialidade'),
-  ('Med-PaLM 2.1', 'Google Research', '2.1', 'Multi-Especialidade'),
-  ('Llama 3 (70B)', 'Meta', '70B', 'Multi-Especialidade'),
-  ('Gemini 1.5 Pro', 'Google DeepMind', '1.5 Pro', 'Multi-Especialidade'),
-  ('Mistral Med', 'Mistral AI', 'Med', 'Multi-Especialidade'),
-  ('DeepSeek Health', 'DeepSeek', 'Health', 'Multi-Especialidade'),
-  ('Qwen2 Clinical', 'Alibaba', '2.0', 'Multi-Especialidade')
+  ('Gemini', 'Google DeepMind', '3.1 Pro', 'Multi-Especialidade'),
+  ('Claude', 'Anthropic', '4', 'Multi-Especialidade'),
+  ('DeepSeek', 'DeepSeek', 'R2/V3', 'Multi-Especialidade'),
+  ('Grok', 'xAI', '3', 'Multi-Especialidade'),
+  ('Perplexity', 'Perplexity', 'Pro', 'Multi-Especialidade'),
+  ('Manus', 'Manus', '1', 'Multi-Especialidade'),
+  ('Antigravity', 'Agentic', '1.0', 'Multi-Especialidade'),
+  ('Chat Z.Ai', 'Z.Ai', 'V1', 'Multi-Especialidade')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO global_kpis (metric_name, metric_value, change_value, change_positive) VALUES

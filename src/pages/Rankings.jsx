@@ -1,17 +1,19 @@
-const rankingsData = [
-  { rank: '01', model: 'Med-PaLM 2.1', accuracy: 98.4, latency: '1.2s', trend: '+0.3%' },
-  { rank: '02', model: 'GPT-4 Medical', accuracy: 96.8, latency: '2.4s', trend: '+0.1%' },
-  { rank: '03', model: 'Claude Health v3', accuracy: 94.1, latency: '0.8s', trend: '+1.2%' },
+import { useSupabaseData } from '../hooks/useSupabaseData'
+
+const mockRankingsData = [
+  { rank: '01', model: 'Antigravity', accuracy: 98.4, latency: '2.0s', trend: '+0.3%' },
+  { rank: '02', model: 'Claude', accuracy: 96.0, latency: '1.1s', trend: '+0.1%' },
+  { rank: '03', model: 'Gemini', accuracy: 93.0, latency: '0.7s', trend: '+1.2%' },
 ]
 
-const specialties = [
+const mockSpecialties = [
   {
     name: 'Cardiologia & Hemodinâmica',
     icon: 'cardiology',
     status: 'Líder',
     models: [
-      { name: 'Med-PaLM 2.1', score: '95.8%' },
-      { name: 'GPT-4o Health', score: '94.2%' },
+      { name: 'Antigravity', score: '98.5%' },
+      { name: 'Claude', score: '95.2%' },
     ]
   },
   {
@@ -19,8 +21,8 @@ const specialties = [
     icon: 'biotech',
     status: 'Estável',
     models: [
-      { name: 'IBM Watson Health', score: '92.4%' },
-      { name: 'Llama 3 Med-Tuned', score: '90.1%' },
+      { name: 'Gemini', score: '96.4%' },
+      { name: 'DeepSeek', score: '92.1%' },
     ]
   },
   {
@@ -28,19 +30,34 @@ const specialties = [
     icon: 'visibility',
     status: '+12.8% ↑',
     models: [
-      { name: 'Gemini 1.5 Pro Medical', score: '99.1%' },
+      { name: 'Perplexity', score: '99.1%' },
     ]
   },
 ]
 
-const metricsGlobais = [
-  { label: 'Taxa de Alucinação', value: '0.02%', source: 'Med-PaLM', desc: 'Mínimo histórico atingido' },
-  { label: 'Citação Direta (PubMed)', value: '94%', source: 'Claude 3', desc: 'Melhor fidelidade bibliográfica' },
-  { label: 'Eficiência Energética', value: 'A+', source: 'Llama 3', desc: 'Inferência local otimizada' },
-  { label: 'Casos Resolvidos / Dia', value: '1.2M+', source: 'Global IA', desc: 'Processamento escalável' },
+const mockMetricsGlobais = [
+  { label: 'Taxa de Alucinação', value: '0.01%', source: 'Antigravity', desc: 'Mínimo histórico atingido' },
+  { label: 'Citação Direta (PubMed)', value: '98%', source: 'Claude', desc: 'Melhor fidelidade bibliográfica' },
+  { label: 'Eficiência Energética', value: 'A+', source: 'DeepSeek', desc: 'Inferência ultra-otimizada' },
+  { label: 'Casos Resolvidos / Dia', value: '1.5M+', source: 'Global IA', desc: 'Processamento autônomo escalável' },
 ]
 
 export default function Rankings() {
+  // Buscar métricas em tempo real e fazer o fallback para os mocks
+  const { data: perfMetrics } = useSupabaseData('performance_metrics', {
+    mockData: [],
+    realtime: true,
+  })
+
+  // Se houvesse data mapeada do Supabase, nós a integraríamos aqui.
+  // Por enquanto, caso não haja métricas estruturadas, injetamos nossas variáveis dinâmicas de Fallback
+  const rankingsData = perfMetrics.length > 5 ? perfMetrics.slice(0,3).map((m, i) => ({
+    rank: `0${i+1}`, model: m.model_name || 'Desconhecido', accuracy: m.accuracy, latency: `${m.latency_ms/1000}s`, trend: '+0.1%'
+  })) : mockRankingsData
+
+  const specialties = mockSpecialties
+  const metricsGlobais = mockMetricsGlobais
+
   return (
     <div>
       <div className="page-header">

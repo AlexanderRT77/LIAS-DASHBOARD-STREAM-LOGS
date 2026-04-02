@@ -1,32 +1,34 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ScatterChart, Scatter, CartesianGrid } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ScatterChart, Scatter, CartesianGrid, PieChart, Pie, Cell } from 'recharts'
 import { useSupabaseData } from '../hooks/useSupabaseData'
 
 const mockAccuracyData = [
-  { name: 'GPT-4o Health', value: 96.8 },
-  { name: 'Claude 3.5 Sonnet', value: 95.2 },
-  { name: 'Med-PaLM 2', value: 98.4 },
-  { name: 'Llama 3 (70B)', value: 91.5 },
-  { name: 'Gemini 1.5 Pro', value: 94.7 },
-  { name: 'Mistral Med', value: 89.3 },
-  { name: 'DeepSeek Health', value: 87.1 },
-  { name: 'Qwen2 Clinical', value: 90.8 },
+  { name: 'Gemini', value: 93.0 },
+  { name: 'Claude', value: 95.0 },
+  { name: 'DeepSeek', value: 88.0 },
+  { name: 'Grok', value: 85.0 },
+  { name: 'Perplexity', value: 88.0 },
+  { name: 'Manus', value: 85.0 },
+  { name: 'Antigravity', value: 97.0 },
+  { name: 'Chat Z.Ai', value: 78.0 },
 ]
 
 const mockScatterData = [
-  { latency: 210, cost: 0.016, name: 'GPT-4o' },
-  { latency: 140, cost: 0.012, name: 'Claude 3.5' },
-  { latency: 320, cost: 0.008, name: 'Med-PaLM' },
-  { latency: 45, cost: 0.004, name: 'Llama 3' },
-  { latency: 180, cost: 0.006, name: 'Gemini 1.5' },
-  { latency: 95, cost: 0.003, name: 'Mistral' },
+  { latency: 0.7, cost: 0.00125, name: 'Gemini' },
+  { latency: 1.1, cost: 0.003, name: 'Claude' },
+  { latency: 1.8, cost: 0.00014, name: 'DeepSeek' },
+  { latency: 0.6, cost: 0.0015, name: 'Grok' },
+  { latency: 3.5, cost: 0.002, name: 'Perplexity' },
+  { latency: 4.5, cost: 0.005, name: 'Manus' },
+  { latency: 2.0, cost: 0.00001, name: 'Antigravity' },
+  { latency: 0.4, cost: 0.0005, name: 'Chat Z.Ai' },
 ]
 
 const mockInsightsData = [
-  { id: 'INS-4821', specialty: 'Cardiologia', model_name: 'GPT-4o', status: 'Concluído', confidence: 99.2, diagnosed_at: '2024-04-02' },
-  { id: 'INS-4820', specialty: 'Neurologia', model_name: 'Claude 3.5', status: 'Em análise', confidence: 97.8, diagnosed_at: '2024-04-02' },
-  { id: 'INS-4819', specialty: 'Oncologia', model_name: 'Med-PaLM', status: 'Concluído', confidence: 98.1, diagnosed_at: '2024-04-01' },
-  { id: 'INS-4818', specialty: 'Radiologia', model_name: 'Gemini Pro', status: 'Concluído', confidence: 96.4, diagnosed_at: '2024-04-01' },
-  { id: 'INS-4817', specialty: 'Dermatologia', model_name: 'Llama 3', status: 'Pendente', confidence: 94.3, diagnosed_at: '2024-04-01' },
+  { id: 'INS-4821', specialty: 'Cardiologia', model_name: 'Antigravity', status: 'Concluído', confidence: 99.2, diagnosed_at: '2024-04-02' },
+  { id: 'INS-4820', specialty: 'Neurologia', model_name: 'Claude', status: 'Em análise', confidence: 97.8, diagnosed_at: '2024-04-02' },
+  { id: 'INS-4819', specialty: 'Oncologia', model_name: 'Gemini', status: 'Concluído', confidence: 98.1, diagnosed_at: '2024-04-01' },
+  { id: 'INS-4818', specialty: 'Radiologia', model_name: 'Perplexity', status: 'Concluído', confidence: 96.4, diagnosed_at: '2024-04-01' },
+  { id: 'INS-4817', specialty: 'Dermatologia', model_name: 'DeepSeek', status: 'Pendente', confidence: 94.3, diagnosed_at: '2024-04-01' },
 ]
 
 const mockKpis = [
@@ -68,15 +70,16 @@ export default function Dashboard() {
     realtime: true,
   })
 
-  // Buscar últimos diagnósticos
-  const { data: recentDiagnostics } = useSupabaseData('diagnostic_records', {
+  // Buscar todos os diagnósticos (ordenados pelo mais recente) para Tabela e Gráfico de Rosca
+  const { data: allDiagnostics } = useSupabaseData('diagnostic_records', {
     mockData: mockInsightsData,
     orderBy: 'diagnosed_at',
     ascending: false,
-    limit: 5,
     realtime: true,
   })
 
+  // Para a tabela, usamos apenas os últimos 5
+  const recentDiagnostics = allDiagnostics.slice(0, 5)
   // Buscar métricas de performance para os gráficos
   const { data: perfMetrics } = useSupabaseData('performance_metrics', {
     mockData: [],
@@ -107,6 +110,15 @@ export default function Dashboard() {
           cost: m.cost_per_1m_tokens,
         }))
     : mockScatterData
+
+  // Cálculo matemático do Gráfico de Rosca (Proporção por Status/Heurística)
+  const statusGrouping = allDiagnostics.length > 0 ? allDiagnostics : mockInsightsData
+  const pieDataMap = statusGrouping.reduce((acc, row) => {
+    acc[row.status] = (acc[row.status] || 0) + 1
+    return acc
+  }, {})
+  const pieData = Object.keys(pieDataMap).map(key => ({ name: key, value: pieDataMap[key] }))
+  const pieColors = ['#99f7ff', '#ac89ff', '#ff716c', '#6f758b', '#ffa057', '#00ffb2', '#ff00cc', '#f0f0f0']
 
   return (
     <div>
@@ -183,6 +195,44 @@ export default function Dashboard() {
               <Tooltip content={<CustomTooltip />} />
               <Scatter data={scatterData} fill="#ac89ff" fillOpacity={0.85} strokeWidth={0} />
             </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="charts-grid" style={{ marginTop: 'var(--space-6)' }}>
+        <div className="chart-container animate-in" style={{ animationDelay: '0.45s', opacity: 0 }}>
+          <div className="chart-header">
+            <h3 className="chart-title">Status dos Diagnósticos</h3>
+            <p className="chart-subtitle">Análise heurística da resolução clínica do modelo</p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={70}
+                outerRadius={100}
+                paddingAngle={5}
+                dataKey="value"
+                stroke="none"
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null
+                  return (
+                    <div style={{ background: '#1c253e', border: '1px solid rgba(65,71,91,0.3)', borderRadius: '8px', padding: '8px 12px' }}>
+                      <p style={{ color: '#dfe4fe', fontWeight: 600, fontSize: '0.8125rem' }}>{payload[0].name}</p>
+                      <p style={{ color: payload[0].payload.fill, fontWeight: 700, fontSize: '1rem' }}>{payload[0].value}</p>
+                    </div>
+                  )
+                }}
+              />
+            </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
