@@ -6,6 +6,7 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts'
 import { useArtificialAnalysis } from '../hooks/useArtificialAnalysis'
+import { AI_LOGOS, ModelLogo } from '../utils/modelLogos'
 import '../styles/dashboard.css'
 
 // ── Cores por modelo (consistente com o projeto inteiro) ──
@@ -307,6 +308,7 @@ export default function Dashboard() {
           <div className="dash-legend">
             {MODEL_ORDER.map(name => (
               <div key={name} className="dash-legend-item">
+                <ModelLogo name={name} size={16} />
                 <div className="dash-legend-dot" style={{ background: MODEL_COLORS[name] }} />
                 {name}
               </div>
@@ -352,6 +354,7 @@ export default function Dashboard() {
           <div className="dash-legend">
             {MODEL_ORDER.map(name => (
               <div key={name} className="dash-legend-item">
+                <ModelLogo name={name} size={16} />
                 <div className="dash-legend-dot" style={{ background: MODEL_COLORS[name] }} />
                 {name}
               </div>
@@ -461,6 +464,7 @@ export default function Dashboard() {
               if (!m) return null
               return [
                 <div key={`${modelName}-label`} className="heatmap-row-label">
+                  <ModelLogo name={modelName} size={18} />
                   <div className="heatmap-row-dot" style={{ background: MODEL_COLORS[modelName] }} />
                   {modelName}
                 </div>,
@@ -550,6 +554,7 @@ export default function Dashboard() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <ModelLogo name={m.name} size={22} />
                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: MODEL_COLORS[m.name], flexShrink: 0 }} />
                       <span style={{ fontWeight: 600 }}>{m.name}</span>
                     </div>

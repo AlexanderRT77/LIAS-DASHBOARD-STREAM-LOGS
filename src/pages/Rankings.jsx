@@ -1,4 +1,5 @@
 import { useSupabaseData } from '../hooks/useSupabaseData'
+import { ModelLogo } from '../utils/modelLogos'
 
 const mockRankingsData = [
   { rank: '01', model: 'Antigravity', accuracy: 98.4, latency: '2.0s', trend: '+0.3%' },
@@ -90,7 +91,7 @@ export default function Rankings() {
                   <td style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--on-surface-variant)' }}>{r.rank}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span className="material-symbols-outlined" style={{ color: 'var(--primary-dim)', fontSize: '1.25rem' }}>language</span>
+                      <ModelLogo name={r.model} size={22} />
                       <span style={{ fontWeight: 600 }}>{r.model}</span>
                     </div>
                   </td>
@@ -127,7 +128,8 @@ export default function Rankings() {
                   padding: 'var(--space-2) 0',
                   borderBottom: j < spec.models.length - 1 ? '1px solid rgba(65,71,91,0.1)' : 'none',
                 }}>
-                  <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.8125rem' }}>
+                  <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ModelLogo name={m.name} size={16} />
                     {j + 1}. {m.name}
                   </span>
                   <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{m.score}</span>

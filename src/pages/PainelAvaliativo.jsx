@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useEvaluation } from '../contexts/EvaluationContext';
+import { ModelLogo } from '../utils/modelLogos';
 
 const CLASSIFICATION_CRITERIA = [
   {
@@ -126,6 +127,7 @@ export default function PainelAvaliativo() {
         </div>
         
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <ModelLogo name={selectedModel} size={32} style={{ border: '1px solid rgba(0,226,238,0.2)', borderRadius: 8, padding: 2 }} />
           <select 
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}

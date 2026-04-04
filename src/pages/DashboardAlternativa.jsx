@@ -3,6 +3,7 @@ import ReactECharts from 'echarts-for-react'
 import 'echarts-gl'
 import '../styles/dash3d.css'
 import { useEvaluation } from '../contexts/EvaluationContext'
+import { ModelLogo } from '../utils/modelLogos'
 
 const AI_MODELS = [
   { key: 'Antigravity', color: '#ff00cc', icon: 'science' },
@@ -384,6 +385,7 @@ export default function DashboardAlternativa() {
                   className={`dash3d-legend-item ${compareMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}`}
                   onClick={() => compareMode && toggleCompareAI(m.key)}
                 >
+                  <ModelLogo name={m.key} size={20} style={{ borderRadius: 4 }} />
                   <span className="dash3d-legend-dot" style={{ background: m.color }} />
                   <span className="dash3d-legend-name">{m.key}</span>
                   <span className="dash3d-legend-medal">{medal}</span>

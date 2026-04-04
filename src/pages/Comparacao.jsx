@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Radar3D from '../components/Radar3D'
+import { ModelLogo } from '../utils/modelLogos'
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend,
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis 
@@ -139,6 +140,7 @@ export default function Comparacao() {
             ].map((l, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-2) var(--space-3)', background: 'var(--surface-container-high)', borderRadius: 'var(--radius-md)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ModelLogo name={l.name} size={18} />
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color }} />
                   <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{l.name}</span>
                 </div>
@@ -213,6 +215,7 @@ export default function Comparacao() {
                     onClick={() => toggleModel(m.key)}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
                   >
+                    <ModelLogo name={m.key} size={18} />
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? m.color : 'var(--on-surface-variant)' }}></span>
                     {m.key}
                   </div>
@@ -331,7 +334,12 @@ export default function Comparacao() {
           <tbody>
             {comparisonTable.map(r => (
               <tr key={r.model}>
-                <td style={{ fontWeight: 600 }}>{r.model}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <ModelLogo name={r.model} size={20} />
+                    <span style={{ fontWeight: 600 }}>{r.model}</span>
+                  </div>
+                </td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div className="progress-bar" style={{ width: 80 }}>
