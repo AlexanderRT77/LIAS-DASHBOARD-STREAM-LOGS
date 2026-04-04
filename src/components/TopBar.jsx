@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import './TopBar.css'
+import DoomEasterEgg from './DoomEasterEgg'
 
 const pageTitles = {
   '/':           'DASHBOARD GLOBAL',
@@ -15,6 +17,18 @@ const pageTitles = {
 export default function TopBar() {
   const location = useLocation()
   const title = pageTitles[location.pathname] || 'DASHBOARD'
+  
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showDoom, setShowDoom] = useState(false)
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (searchTerm.toLowerCase() === 'doom.app') {
+        setShowDoom(true)
+        setSearchTerm('') // clear
+      }
+    }
+  }
 
   return (
     <header className="topbar">
@@ -34,6 +48,9 @@ export default function TopBar() {
             placeholder="Buscar IA ou Categoria..."
             className="search-input"
             id="global-search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
         </div>
         <button className="topbar-action" title="Notificações" id="btn-notifications">
@@ -43,6 +60,9 @@ export default function TopBar() {
           <span className="material-symbols-outlined">settings</span>
         </button>
       </div>
+      
+      {/* 💥 Easter Egg Modal Render */}
+      {showDoom && <DoomEasterEgg onClose={() => setShowDoom(false)} />}
     </header>
   )
 }
