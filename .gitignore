@@ -12,5 +12,6 @@ dist
 *.jpg
 *.jpeg
 *.gif
+!public/logos/**
 .DS_Store
 Thumbs.db
