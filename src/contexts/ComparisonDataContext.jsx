@@ -82,25 +82,43 @@ export function ComparisonDataProvider({ children }) {
    * Update data from CSV analysis results
    * Called by Upload page after csvSmartMapper processes the file
    */
-  const updateFromCSV = useCallback((processedData, report) => {
+  const updateFromCSV = useCallback((processedData, report, targetModel = null) => {
     const newData = {}
     const meta = {
       uploadedAt: new Date().toISOString(),
       modelsCount: report.modelsFound,
       chartsAffected: report.chartsAffected,
       summary: report.summary,
+      targetModel: targetModel,
+    }
+
+    const mergeArray = (currentArray, incomingArray, keyField) => {
+      if (!incomingArray || incomingArray.length === 0) return currentArray;
+      if (!targetModel) return incomingArray; // Global update: replace entirely
+      
+      const updated = [...currentArray];
+      for (const incomingItem of incomingArray) {
+        const index = updated.findIndex(item => item[keyField].toLowerCase() === incomingItem[keyField].toLowerCase());
+        if (index >= 0) {
+          updated[index] = { ...updated[index], ...incomingItem };
+        } else {
+          updated.push(incomingItem);
+        }
+      }
+      return updated;
     }
 
     // Update benchmark if available
     if (processedData.benchmarkData?.length > 0) {
-      setBenchmarkData(processedData.benchmarkData)
-      newData.benchmarkData = processedData.benchmarkData
+      const newBenchmark = mergeArray(benchmarkData, processedData.benchmarkData, 'name');
+      setBenchmarkData(newBenchmark)
+      newData.benchmarkData = newBenchmark
 
-      // Also generate synthetic latency timeline from benchmark data
+      // Recompute synthetic latency timeline from the new benchmark data
       const newTimeline = ['04:00', '08:00', '12:00', '16:00', '20:00'].map((time, idx) => {
         const row = { time }
         const variance = [0, 0.05, 0.15, 0.1, 0.02] // daily usage pattern
-        processedData.benchmarkData.forEach(m => {
+        newBenchmark.forEach(m => {
           const baseLatency = m.latency * 1000 // convert to ms
           row[m.name] = Math.round(baseLatency * (1 + variance[idx] * (Math.random() * 0.5 + 0.75)))
         })
@@ -115,8 +133,9 @@ export function ComparisonDataProvider({ children }) {
 
     // Update comparison table if available  
     if (processedData.comparisonTable?.length > 0) {
-      setComparisonTable(processedData.comparisonTable)
-      newData.comparisonTable = processedData.comparisonTable
+      const newComparison = mergeArray(comparisonTable, processedData.comparisonTable, 'model');
+      setComparisonTable(newComparison)
+      newData.comparisonTable = newComparison
     } else {
       newData.comparisonTable = comparisonTable
     }

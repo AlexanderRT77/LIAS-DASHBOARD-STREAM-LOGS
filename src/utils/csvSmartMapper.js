@@ -130,9 +130,11 @@ function resolveModelName(raw) {
  * Main analysis function — the "intelligent agent"
  * @param {string[]} headers - CSV column headers
  * @param {object[]} rows - Parsed CSV rows
- * @returns {{ mappings, unmapped, chartTargets, processedData, report }}
+ * @param {object} options - Options { targetModel?: string }
+ * @returns {{ mappings, unmapped, chartTargets, processedData, report, error }}
  */
-export function analyzeCSV(headers, rows) {
+export function analyzeCSV(headers, rows, options = {}) {
+  const { targetModel } = options;
   const mappings = []       // { original, canonical, chart, label }
   const unmapped = []       // { header, reason }
   const chartTargets = new Set()
@@ -164,11 +166,11 @@ export function analyzeCSV(headers, rows) {
 
   // Phase 3: Process data
   const hasModelCol = mappings.find(m => m.canonical === 'model_name')
-  if (!hasModelCol) {
+  if (!hasModelCol && !targetModel) {
     return {
       mappings, unmapped, chartTargets: [...chartTargets],
       processedData: null,
-      error: 'Nenhuma coluna de nome do modelo encontrada. O CSV precisa ter uma coluna "model_name", "modelo", "name" ou similar.',
+      error: 'Nenhuma coluna de nome do modelo encontrada. O CSV precisa ter uma coluna "model_name" ou você deve selecionar uma IA específica para atualizar.',
       report: null,
     }
   }
@@ -180,8 +182,24 @@ export function analyzeCSV(headers, rows) {
   }
 
   for (const row of rows) {
-    const modelRaw = row[hasModelCol.original]
-    const modelName = resolveModelName(modelRaw)
+    // If we have a model column, read it. Else fallback to the targetModel.
+    const modelRaw = hasModelCol ? row[hasModelCol.original] : targetModel
+    let modelName = resolveModelName(modelRaw)
+    
+    // If a target model is enforced, validate
+    if (targetModel) {
+      if (modelName && modelName.toLowerCase() !== targetModel.toLowerCase()) {
+        return {
+          mappings, unmapped, chartTargets: [...chartTargets],
+          processedData: null,
+          error: `ALERTA DE SEGURANÇA: Você selecionou para atualizar apenas "${targetModel}", mas o arquivo contém dados da IA "${modelName}". A operação foi rejeitada para proteger a integridade dos dados.`,
+          report: null,
+        }
+      }
+      // Force model name to target model if empty/undefined
+      modelName = targetModel;
+    }
+
     if (!modelName) continue
 
     // Benchmark (accuracy + latency)
