@@ -8,7 +8,6 @@ import Dashboard from './pages/Dashboard'
 import Rankings from './pages/Rankings'
 import PubMed from './pages/PubMed'
 import Upload from './pages/Upload'
-import MetricasLive from './pages/MetricasLive'
 import Comparacao from './pages/Comparacao'
 import PainelAvaliativo from './pages/PainelAvaliativo'
 import Radar from './pages/Radar'
@@ -31,7 +30,6 @@ export default function App() {
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/pubmed" element={<PubMed />} />
             <Route path="/upload" element={<Upload />} />
-            <Route path="/metricas" element={<MetricasLive />} />
             <Route path="/comparacao" element={<Comparacao />} />
             <Route path="/avaliacao" element={<PainelAvaliativo />} />
             <Route path="/radar" element={<Radar />} />

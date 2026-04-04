@@ -6,7 +6,6 @@ const navItems = [
   { path: '/rankings',   icon: 'leaderboard',     label: 'Rankings' },
   { path: '/pubmed',     icon: 'menu_book',       label: 'PubMed & SciELO' },
   { path: '/upload',     icon: 'upload_file',     label: 'Upload & Export' },
-  { path: '/metricas',   icon: 'monitoring',      label: 'Métricas Live' },
   { path: '/comparacao', icon: 'compare_arrows',  label: 'Comparação de IAs' },
   { path: '/avaliacao',  icon: 'gavel',           label: 'Painel Avaliativo' },
   { path: '/radar',      icon: 'new_releases',    label: 'Radar de Novidades' },
