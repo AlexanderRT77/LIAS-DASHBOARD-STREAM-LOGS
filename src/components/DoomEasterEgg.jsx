@@ -44,12 +44,12 @@ export default function DoomEasterEgg({ onClose }) {
           </button>
         </div>
 
-        {/* Emulador do Doom (Internet Archive MS-DOS Emulator) */}
-        <div style={{ flex: 1, backgroundColor: '#000', position: 'relative' }}>
+        {/* Emulador do Doom (WebAssembly nativo via Silent Space Marine) */}
+        <div style={{ flex: 1, backgroundColor: '#000', position: 'relative', display: 'flex', justifyContent: 'center' }}>
           <iframe 
-            src="https://archive.org/embed/msdos_Doom_1993?autoplay=1"
-            style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
-            allow="autoplay; fullscreen"
+            src="https://silentspacemarine.com/"
+            style={{ width: '100%', height: '100%', border: 'none', background: '#000', pointerEvents: 'auto' }}
+            allow="autoplay; fullscreen; keyboard"
             title="Doom Easter Egg"
           />
         </div>
