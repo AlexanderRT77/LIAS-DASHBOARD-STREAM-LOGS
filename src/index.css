@@ -565,6 +565,9 @@ img { max-width: 100%; display: block; }
 }
 
 @media (max-width: 768px) {
+  .app-layout { flex-direction: column; }
+  .main-content { padding-bottom: 70px; /* Room for bottom nav if we put sidebar at bottom */ }
   .kpi-grid { grid-template-columns: 1fr; }
   .page-content { padding: var(--space-4); }
+  .data-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
