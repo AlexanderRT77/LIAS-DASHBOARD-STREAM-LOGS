@@ -1,15 +1,39 @@
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Papa from 'papaparse'
 import { useAuth } from '../contexts/AuthContext'
 import { useSupabaseData, useSupabaseInsert } from '../hooks/useSupabaseData'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { useComparisonData } from '../contexts/ComparisonDataContext'
+import { useEvaluation } from '../contexts/EvaluationContext'
+import { analyzeCSV, CHART_DESCRIPTIONS } from '../utils/csvSmartMapper'
+import { ModelLogo } from '../utils/modelLogos'
 import LoginModal from '../components/LoginModal'
 
 const SUPPORTED_FORMATS = ['.CSV', '.TSV']
+
+// ═══════════════════════════════════════════════════
+// Destination types with intelligent descriptions
+// ═══════════════════════════════════════════════════
 const TABLE_TARGETS = [
-  { value: 'performance_metrics', label: 'Métricas de Performance', desc: 'Acurácia, latência, custo por modelo' },
-  { value: 'diagnostic_records', label: 'Registros de Diagnóstico', desc: 'Histórico de diagnósticos clínicos' },
-  { value: 'inference_logs', label: 'Logs de Inferência', desc: 'Registros de inferência em tempo real' },
+  {
+    value: 'comparison_charts',
+    label: 'Comparação de IAs',
+    desc: 'Envia dados diretamente para os gráficos da aba "Comparação de IAs"',
+    icon: 'compare_arrows',
+    color: '#00e2ee',
+    charts: ['Acurácia vs Latência', 'Wavechart de Latência', 'Radar de Atributos', 'Tabela de Desempenho'],
+    isNew: true,
+  },
+  {
+    value: 'performance_metrics',
+    label: 'Banco de Dados (Supabase)',
+    desc: 'Acurácia, latência, custo por modelo — direto ao Supabase',
+    icon: 'database',
+    color: '#4ade80',
+    charts: [],
+    isNew: false,
+  },
 ]
 
 const COLUMN_MAPPINGS = {
@@ -18,30 +42,129 @@ const COLUMN_MAPPINGS = {
     optional: ['latency_ms', 'cost_per_1m_tokens', 'hallucination_rate', 'citation_rate', 'compliance_score', 'energy_rating'],
     example: 'model_name,category,accuracy,latency_ms,cost_per_1m_tokens\nGPT-4o Health,cardiologia,96.8,210,0.0150'
   },
-  diagnostic_records: {
-    required: ['record_id', 'model_name', 'specialty', 'confidence'],
-    optional: ['status', 'notes', 'diagnosed_at'],
-    example: 'record_id,model_name,specialty,confidence,status\nREC-3001,GPT-4o,Cardiologia,99.2,Concluído'
-  },
-  inference_logs: {
-    required: ['inference_id', 'model_name', 'task'],
-    optional: ['latency_ms', 'status', 'confidence'],
-    example: 'inference_id,model_name,task,latency_ms,status,confidence\nINF-90001,Claude 3.5,Triagem,140,Active,98.8'
+  comparison_charts: {
+    required: ['model_name'],
+    optional: ['accuracy', 'latency', 'reasoning', 'extraction', 'cost', 'compliance', 'criatividade', 'confiabilidade', 'usabilidade', 'seguranca', 'potencial_saude', 'status'],
+    example: 'model_name,accuracy,latency,reasoning,extraction,cost,compliance\nAntigravity,97.0,2.0,98,99,0.00,99.9'
   },
 }
 
+// ═══════════════════════════════════════════════════
+// Smart Mapping Report Component
+// ═══════════════════════════════════════════════════
+function MappingReport({ analysis }) {
+  if (!analysis) return null
+  const { mappings, unmapped, report, error } = analysis
+
+  if (error) {
+    return (
+      <div className="card" style={{ borderLeft: '3px solid var(--error)', marginBottom: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--error)' }}>error</span>
+          <span style={{ color: 'var(--error)', fontWeight: 600, fontSize: '0.875rem' }}>{error}</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card animate-in" style={{ borderLeft: '3px solid var(--primary)', marginBottom: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+        <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '1.4rem' }}>psychology</span>
+        <div>
+          <h4 style={{ fontWeight: 700, fontSize: '0.9375rem' }}>Análise Inteligente do CSV</h4>
+          <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>
+            {report.mappedColumns}/{report.totalColumns} colunas mapeadas · {report.modelsFound} modelo(s) · {report.fuzzyMatches > 0 ? `${report.fuzzyMatches} match semântico` : ''}
+          </p>
+        </div>
+      </div>
+
+      {/* Schema visual: columns → charts */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 'var(--space-3)', alignItems: 'start', marginBottom: 'var(--space-4)' }}>
+        {/* Left: detected columns */}
+        <div>
+          <p className="label-sm" style={{ marginBottom: 'var(--space-2)' }}>Colunas Detectadas</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {mappings.map((m, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '4px 10px', borderRadius: 'var(--radius-sm)',
+                background: m.fuzzy ? 'rgba(251,191,36,0.08)' : 'rgba(0,226,238,0.06)',
+                border: `1px solid ${m.fuzzy ? 'rgba(251,191,36,0.2)' : 'rgba(0,226,238,0.15)'}`,
+                fontSize: '0.75rem',
+              }}>
+                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--on-surface)' }}>{m.original}</span>
+                <span style={{ color: 'var(--on-surface-variant)' }}>→</span>
+                <span style={{ color: m.fuzzy ? 'var(--warning)' : 'var(--primary)', fontWeight: 500 }}>{m.label}</span>
+                {m.fuzzy && <span title="Match semântico aproximado" style={{ fontSize: '0.65rem' }}>🧠</span>}
+              </div>
+            ))}
+            {unmapped.map((u, i) => (
+              <div key={`u${i}`} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '4px 10px', borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255,113,108,0.06)', border: '1px solid rgba(255,113,108,0.15)',
+                fontSize: '0.75rem', color: 'var(--error)',
+              }}>
+                <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{u.header}</span>
+                <span>— ignorada</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <div style={{ display: 'flex', alignItems: 'center', paddingTop: 30 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '2rem', color: 'var(--primary)' }}>arrow_forward</span>
+        </div>
+
+        {/* Right: targets */}
+        <div>
+          <p className="label-sm" style={{ marginBottom: 'var(--space-2)' }}>Gráficos de Destino</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {report.chartsAffected.map((chart, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 12px', borderRadius: 'var(--radius-sm)',
+                background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)',
+                fontSize: '0.8125rem', fontWeight: 500,
+              }}>
+                {CHART_DESCRIPTIONS[chart] || chart}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Summary lines */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 'var(--space-3)', background: 'var(--surface-container-highest)', borderRadius: 'var(--radius-md)' }}>
+        {report.summary.map((line, i) => (
+          <span key={i} style={{ fontSize: '0.8125rem', color: 'var(--on-surface)' }}>{line}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════
+// Main Upload Component
+// ═══════════════════════════════════════════════════
 export default function Upload() {
+  const navigate = useNavigate()
   const { user } = useAuth()
+  const { updateFromCSV } = useComparisonData()
+  const { updateModelScore } = useEvaluation()
   const [showLogin, setShowLogin] = useState(false)
   const [dragActive, setDragActive] = useState(false)
-  const [selectedTable, setSelectedTable] = useState('performance_metrics')
+  const [selectedTable, setSelectedTable] = useState('comparison_charts')
   const [parsedData, setParsedData] = useState(null)
   const [parseError, setParseError] = useState(null)
   const [fileName, setFileName] = useState('')
-  const [uploadStatus, setUploadStatus] = useState(null) // null | 'uploading' | 'success' | 'error'
+  const [uploadStatus, setUploadStatus] = useState(null)
   const [uploadResult, setUploadResult] = useState(null)
+  const [analysis, setAnalysis] = useState(null) // Smart mapper result
 
-  const { insert: insertData, loading: inserting } = useSupabaseInsert(selectedTable)
+  const { insert: insertData, loading: inserting } = useSupabaseInsert('performance_metrics')
   const { insert: insertUploadLog } = useSupabaseInsert('file_uploads')
   const { data: recentUploads } = useSupabaseData('file_uploads', {
     mockData: [
@@ -65,6 +188,7 @@ export default function Upload() {
     setParseError(null)
     setParsedData(null)
     setUploadStatus(null)
+    setAnalysis(null)
 
     Papa.parse(file, {
       header: true,
@@ -82,17 +206,18 @@ export default function Upload() {
         }
 
         const columns = Object.keys(results.data[0])
-        const mapping = COLUMN_MAPPINGS[selectedTable]
-        const missingRequired = mapping.required.filter(col => 
-          !columns.some(c => c.toLowerCase().replace(/\s/g, '_') === col)
-        )
+
+        // Run smart analysis for comparison_charts target
+        if (selectedTable === 'comparison_charts') {
+          const result = analyzeCSV(columns, results.data)
+          setAnalysis(result)
+        }
 
         setParsedData({
           rows: results.data,
           columns,
           rowCount: results.data.length,
           fileSize: (file.size / 1024).toFixed(1) + ' KB',
-          missingRequired,
         })
       },
       error: (err) => {
@@ -112,52 +237,75 @@ export default function Upload() {
     handleFile(e.target.files[0])
   }
 
+  // ═══════ UPLOAD HANDLER ═══════
   const handleUpload = async () => {
-    if (!user) {
-      setShowLogin(true)
-      return
-    }
-
     if (!parsedData?.rows?.length) return
 
     setUploadStatus('uploading')
 
     try {
-      // Normalizar nomes de colunas (lowercase + underscore)
-      const normalizedRows = parsedData.rows.map(row => {
-        const normalized = {}
-        Object.entries(row).forEach(([key, value]) => {
-          const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
-          if (value !== null && value !== undefined && value !== '') {
-            normalized[normalizedKey] = value
+      if (selectedTable === 'comparison_charts') {
+        // Route to ComparisonDataContext (no auth required for local)
+        if (!analysis || analysis.error) {
+          setUploadStatus('error')
+          setUploadResult('Erro: Análise inteligente falhou. Verifique as colunas do CSV.')
+          return
+        }
+
+        const meta = updateFromCSV(analysis.processedData, analysis.report)
+
+        // Also update EvaluationContext radar if radar data available
+        if (analysis.processedData.radarUpdates) {
+          for (const [attr, models] of Object.entries(analysis.processedData.radarUpdates)) {
+            for (const [modelName, score] of Object.entries(models)) {
+              updateModelScore(modelName, attr, score)
+            }
           }
+        }
+
+        setUploadStatus('success')
+        setUploadResult(`✅ Dados enviados com sucesso para a aba "Comparação de IAs"! ${meta.chartsAffected.length} gráfico(s) atualizado(s).`)
+      } else {
+        // Route to Supabase (requires auth)
+        if (!user) {
+          setShowLogin(true)
+          setUploadStatus(null)
+          return
+        }
+
+        const normalizedRows = parsedData.rows.map(row => {
+          const normalized = {}
+          Object.entries(row).forEach(([key, value]) => {
+            const normalizedKey = key.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+            if (value !== null && value !== undefined && value !== '') {
+              normalized[normalizedKey] = value
+            }
+          })
+          normalized.created_by = user.id
+          return normalized
         })
-        // Adicionar created_by
-        normalized.created_by = user.id
-        return normalized
-      })
 
-      const { data, error } = await insertData(normalizedRows)
+        const { error } = await insertData(normalizedRows)
 
-      if (error) {
-        setUploadStatus('error')
-        setUploadResult(`Erro: ${error}`)
-        return
+        if (error) {
+          setUploadStatus('error')
+          setUploadResult(`Erro: ${error}`)
+          return
+        }
+
+        await insertUploadLog([{
+          filename: fileName,
+          file_size: parsedData.fileSize,
+          file_type: fileName.split('.').pop().toUpperCase(),
+          status: 'Processado',
+          rows_imported: normalizedRows.length,
+          target_table: selectedTable,
+          uploaded_by: user.id,
+        }])
+
+        setUploadStatus('success')
+        setUploadResult(`✅ ${normalizedRows.length} registros importados com sucesso para "${selectedTable}"!`)
       }
-
-      // Registrar upload
-      await insertUploadLog([{
-        filename: fileName,
-        file_size: parsedData.fileSize,
-        file_type: fileName.split('.').pop().toUpperCase(),
-        status: 'Processado',
-        rows_imported: normalizedRows.length,
-        target_table: selectedTable,
-        uploaded_by: user.id,
-      }])
-
-      setUploadStatus('success')
-      setUploadResult(`✅ ${normalizedRows.length} registros importados com sucesso para "${selectedTable}"!`)
     } catch (err) {
       setUploadStatus('error')
       setUploadResult(`Erro inesperado: ${err.message}`)
@@ -166,17 +314,16 @@ export default function Upload() {
 
   const mapping = COLUMN_MAPPINGS[selectedTable]
 
-  // Cálculo dinâmico do storage em tempo real baseado nos uploads processados
-  const baseStorageMB = 138.5; // Espaço utilizado base no Supabase
+  // Storage calc
+  const baseStorageMB = 138.5
   const uploadedMB = recentUploads.reduce((acc, u) => {
-    if (!u.file_size) return acc;
-    const mb = parseFloat(u.file_size.replace(/[^0-9.]/g, ''));
-    return acc + (isNaN(mb) ? 0 : mb);
-  }, 0);
-  
-  const totalUsedMB = (baseStorageMB + uploadedMB).toFixed(1);
-  const maxStorageMB = 1000.0;
-  const storagePercentage = Math.min(((totalUsedMB / maxStorageMB) * 100), 100).toFixed(1);
+    if (!u.file_size) return acc
+    const mb = parseFloat(u.file_size.replace(/[^0-9.]/g, ''))
+    return acc + (isNaN(mb) ? 0 : mb)
+  }, 0)
+  const totalUsedMB = (baseStorageMB + uploadedMB).toFixed(1)
+  const maxStorageMB = 1000.0
+  const storagePercentage = Math.min(((totalUsedMB / maxStorageMB) * 100), 100).toFixed(1)
 
   return (
     <div>
@@ -185,56 +332,32 @@ export default function Upload() {
       <div className="page-header">
         <h2 className="page-title">Gestão de Dados</h2>
         <p className="page-description">
-          Upload de datasets clínicos via CSV para alimentar os gráficos do dashboard. 
-          Os dados são enviados diretamente para o Supabase e refletidos em tempo real.
+          Upload de datasets clínicos via CSV para alimentar os gráficos do dashboard.
+          Os dados importados são processados por um <strong style={{ color: 'var(--primary)' }}>agente inteligente</strong> que distribui automaticamente cada métrica ao gráfico correto.
         </p>
-        {!user && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-            marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)',
-            background: 'rgba(251,191,36,0.08)', borderRadius: 'var(--radius-lg)',
-            maxWidth: 'fit-content'
-          }}>
-            <span className="material-symbols-outlined" style={{ color: 'var(--warning)', fontSize: '1.2rem' }}>lock</span>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--warning)' }}>
-              <button onClick={() => setShowLogin(true)} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline' }}>
-                Faça login
-              </button>{' '}para enviar planilhas e editar dados.
-            </span>
-          </div>
-        )}
-        {user && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-            marginTop: 'var(--space-3)', padding: 'var(--space-3) var(--space-4)',
-            background: 'rgba(74,222,128,0.08)', borderRadius: 'var(--radius-lg)',
-            maxWidth: 'fit-content'
-          }}>
-            <span className="material-symbols-outlined" style={{ color: 'var(--success)', fontSize: '1.2rem' }}>check_circle</span>
-            <span style={{ fontSize: '0.8125rem', color: 'var(--success)' }}>
-              Logado como <strong>{user.email}</strong>
-            </span>
-          </div>
-        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 'var(--space-6)', marginBottom: 'var(--space-8)' }}>
         {/* Left: Upload Zone */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          {/* Table Selector */}
+
+          {/* Destination Selector — Redesigned */}
           <div className="card">
-            <p className="label-sm" style={{ marginBottom: 'var(--space-3)' }}>Tabela de Destino</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>route</span>
+              <p className="label-sm" style={{ margin: 0 }}>Destino dos Dados</p>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               {TABLE_TARGETS.map(t => (
                 <label
                   key={t.value}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                    display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
                     padding: 'var(--space-3) var(--space-4)',
-                    background: selectedTable === t.value ? 'rgba(0,226,238,0.06)' : 'var(--surface-container-high)',
+                    background: selectedTable === t.value ? `${t.color}08` : 'var(--surface-container-high)',
                     borderRadius: 'var(--radius-md)',
                     cursor: 'pointer',
-                    border: selectedTable === t.value ? '1px solid rgba(0,226,238,0.2)' : '1px solid transparent',
+                    border: selectedTable === t.value ? `1px solid ${t.color}33` : '1px solid transparent',
                     transition: 'all var(--transition-fast)',
                   }}
                 >
@@ -243,12 +366,27 @@ export default function Upload() {
                     name="table-target"
                     value={t.value}
                     checked={selectedTable === t.value}
-                    onChange={(e) => setSelectedTable(e.target.value)}
-                    style={{ accentColor: '#00e2ee' }}
+                    onChange={(e) => { setSelectedTable(e.target.value); setAnalysis(null); setParsedData(null); setFileName(''); setParseError(null) }}
+                    style={{ accentColor: t.color, marginTop: 3 }}
                   />
-                  <div>
-                    <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.label}</span>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>{t.desc}</p>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', color: t.color }}>{t.icon}</span>
+                      <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.label}</span>
+                      {t.isNew && <span className="badge badge-primary" style={{ fontSize: '0.6rem', padding: '1px 6px' }}>NOVO</span>}
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginTop: 2 }}>{t.desc}</p>
+                    {t.charts.length > 0 && selectedTable === t.value && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                        {t.charts.map(c => (
+                          <span key={c} style={{
+                            fontSize: '0.65rem', padding: '2px 8px',
+                            background: `${t.color}15`, color: t.color,
+                            borderRadius: 'var(--radius-full)', fontWeight: 500,
+                          }}>{c}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </label>
               ))}
@@ -298,29 +436,63 @@ export default function Upload() {
           </div>
         </div>
 
-        {/* Right: Column Mapping + Preview */}
+        {/* Right: Column Mapping + Status */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {/* Column Requirements */}
           <div className="card">
-            <p className="label-sm" style={{ marginBottom: 'var(--space-3)' }}>Colunas Esperadas</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+              <p className="label-sm" style={{ margin: 0 }}>Colunas Esperadas</p>
+              <a
+                href="/templates/template_metricas_ia.csv"
+                download="template_metricas_ia.csv"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.75rem', fontWeight: 600,
+                  color: 'var(--primary)', textDecoration: 'none',
+                  padding: '4px 12px', borderRadius: 'var(--radius-full)',
+                  background: 'rgba(0,226,238,0.08)', border: '1px solid rgba(0,226,238,0.2)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>download</span>
+                Baixar Template CSV
+              </a>
+            </div>
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 'var(--space-2)' }}>Obrigatórias:</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 'var(--space-2)' }}>Obrigatória:</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)' }}>
                 {mapping.required.map(col => (
-                  <span key={col} className="badge badge-primary" style={{ fontSize: '0.6875rem' }}>
-                    {parsedData?.missingRequired?.includes(col) ? '❌' : '✓'} {col}
-                  </span>
+                  <span key={col} className="badge badge-primary" style={{ fontSize: '0.6875rem' }}>✓ {col}</span>
                 ))}
               </div>
             </div>
             <div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 'var(--space-2)' }}>Opcionais:</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginBottom: 'var(--space-2)' }}>Opcionais (detectadas por IA):</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-1)' }}>
                 {mapping.optional.map(col => (
                   <span key={col} className="badge badge-tertiary" style={{ fontSize: '0.6875rem' }}>{col}</span>
                 ))}
               </div>
             </div>
+
+            {/* Semantic hint */}
+            {selectedTable === 'comparison_charts' && (
+              <div style={{
+                marginTop: 'var(--space-3)', padding: 'var(--space-3)',
+                background: 'rgba(251,191,36,0.05)', borderRadius: 'var(--radius-md)',
+                border: '1px solid rgba(251,191,36,0.15)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <span style={{ fontSize: '0.875rem' }}>🧠</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--warning)' }}>Análise Semântica Ativa</span>
+                </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', lineHeight: 1.5 }}>
+                  O agente inteligente reconhece variações como <code style={{ color: 'var(--primary)' }}>acuracia</code>, <code style={{ color: 'var(--primary)' }}>precisão</code>, <code style={{ color: 'var(--primary)' }}>acc</code> → Acurácia.
+                  Também aceita nomes em inglês e português. Colunas não reconhecidas serão ignoradas com aviso.
+                </p>
+              </div>
+            )}
+
             <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'var(--surface-container-highest)', borderRadius: 'var(--radius-md)' }}>
               <p style={{ fontSize: '0.6875rem', color: 'var(--on-surface-variant)', marginBottom: '4px' }}>Exemplo CSV:</p>
               <pre style={{ fontSize: '0.6875rem', color: 'var(--primary)', fontFamily: 'monospace', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
@@ -328,6 +500,36 @@ export default function Upload() {
               </pre>
             </div>
           </div>
+
+          {/* Info: Where data goes */}
+          {selectedTable === 'comparison_charts' && (
+            <div className="card" style={{ borderLeft: '3px solid var(--primary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 'var(--space-2)' }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>info</span>
+                <span className="label-sm" style={{ margin: 0 }}>Para Onde Vão os Dados?</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'var(--primary)' }}>accuracy + latency</span>
+                  <span style={{ color: 'var(--outline)' }}>→</span>
+                  <span>Gráfico Acurácia vs Latência + Wavechart</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'var(--primary)' }}>reasoning + extraction + cost + compliance</span>
+                  <span style={{ color: 'var(--outline)' }}>→</span>
+                  <span>Tabela de Desempenho Detalhada</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: 'var(--primary)' }}>criatividade, seguranca, etc.</span>
+                  <span style={{ color: 'var(--outline)' }}>→</span>
+                  <span>Radar de Atributos Clínicos (6 eixos)</span>
+                </div>
+              </div>
+              <p style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', marginTop: 8 }}>
+                💾 Dados ficam salvos no navegador (localStorage). Para reverter, use o botão "Resetar" na aba Comparação.
+              </p>
+            </div>
+          )}
 
           {/* System Status */}
           {[
@@ -358,6 +560,9 @@ export default function Upload() {
         </div>
       )}
 
+      {/* Smart Mapping Report */}
+      {selectedTable === 'comparison_charts' && analysis && <MappingReport analysis={analysis} />}
+
       {/* Parsed Data Preview */}
       {parsedData && !parseError && (
         <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
@@ -366,31 +571,46 @@ export default function Upload() {
               <h3 className="title-lg">Preview dos Dados</h3>
               <p className="chart-subtitle">
                 {parsedData.rowCount} linhas · {parsedData.columns.length} colunas · {parsedData.fileSize}
-                {parsedData.missingRequired?.length > 0 && (
-                  <span style={{ color: 'var(--error)', marginLeft: '12px' }}>
-                    ⚠️ Faltam colunas obrigatórias: {parsedData.missingRequired.join(', ')}
-                  </span>
-                )}
               </p>
             </div>
-            <button
-              className="btn btn-primary"
-              onClick={handleUpload}
-              disabled={inserting || uploadStatus === 'uploading' || parsedData.missingRequired?.length > 0}
-              style={{ minWidth: 180 }}
-            >
-              {uploadStatus === 'uploading' ? (
-                <>
-                  <span className="material-symbols-outlined spinning" style={{ fontSize: '1rem' }}>progress_activity</span>
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>cloud_upload</span>
-                  Enviar para Supabase
-                </>
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+              {uploadStatus === 'success' && selectedTable === 'comparison_charts' && (
+                <button
+                  className="btn"
+                  onClick={() => navigate('/comparacao')}
+                  style={{
+                    background: 'rgba(0,226,238,0.1)', color: 'var(--primary)',
+                    border: '1px solid rgba(0,226,238,0.3)', minWidth: 160,
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>visibility</span>
+                  Ver na Comparação
+                </button>
               )}
-            </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleUpload}
+                disabled={inserting || uploadStatus === 'uploading' || (selectedTable === 'comparison_charts' && analysis?.error)}
+                style={{ minWidth: 180 }}
+              >
+                {uploadStatus === 'uploading' ? (
+                  <>
+                    <span className="material-symbols-outlined spinning" style={{ fontSize: '1rem' }}>progress_activity</span>
+                    Processando...
+                  </>
+                ) : selectedTable === 'comparison_charts' ? (
+                  <>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>compare_arrows</span>
+                    Enviar para Comparação
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>cloud_upload</span>
+                    Enviar para Supabase
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {uploadResult && (
@@ -412,9 +632,23 @@ export default function Upload() {
               <thead>
                 <tr>
                   <th>#</th>
-                  {parsedData.columns.map(col => (
-                    <th key={col}>{col}</th>
-                  ))}
+                  {parsedData.columns.map(col => {
+                    const mapped = analysis?.mappings?.find(m => m.original === col)
+                    return (
+                      <th key={col} style={{ position: 'relative' }}>
+                        {col}
+                        {mapped && (
+                          <span style={{
+                            display: 'block', fontSize: '0.6rem', fontWeight: 400,
+                            color: mapped.fuzzy ? 'var(--warning)' : 'var(--primary)',
+                            marginTop: 2,
+                          }}>
+                            → {mapped.label}
+                          </span>
+                        )}
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>

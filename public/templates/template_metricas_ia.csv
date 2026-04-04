@@ -1,0 +1,9 @@
+model_name,accuracy,latency,reasoning,extraction,cost,compliance,criatividade,confiabilidade,usabilidade,seguranca,potencial_saude,status
+Antigravity,97.0,2.0,98,99,0.00,99.9,95,98,96,99,97,Ativo
+Claude,95.0,1.1,96,95,3.00,98.0,92,95,90,98,96,Ativo
+Gemini,93.0,0.7,93,94,1.25,92.0,90,94,95,92,95,Ativo
+DeepSeek,88.0,1.8,91,88,0.14,82.0,85,88,80,82,86,Ativo
+Perplexity,88.0,3.5,82,97,2.00,90.0,70,97,91,90,92,Ativo
+Grok,85.0,0.6,88,84,1.50,75.0,89,84,85,75,82,Ativo
+Manus,85.0,4.5,90,85,5.00,80.0,88,85,82,80,84,Ativo
+Chat Z.Ai,78.0,0.4,78,76,0.50,80.0,75,76,88,80,75,Pendente

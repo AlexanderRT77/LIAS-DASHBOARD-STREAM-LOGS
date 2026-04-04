@@ -6,38 +6,9 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis 
 } from 'recharts'
 
-const benchmarkData = [
-  { name: 'Gemini', accuracy: 93.0, latency: 0.7 },
-  { name: 'Claude', accuracy: 95.0, latency: 1.1 },
-  { name: 'DeepSeek', accuracy: 88.0, latency: 1.8 },
-  { name: 'Grok', accuracy: 85.0, latency: 0.6 },
-  { name: 'Perplexity', accuracy: 88.0, latency: 3.5 },
-  { name: 'Manus', accuracy: 85.0, latency: 4.5 },
-  { name: 'Antigravity', accuracy: 97.0, latency: 2.0 },
-  { name: 'Chat Z.Ai', accuracy: 78.0, latency: 0.4 },
-]
-
-const latencyTimeline = [
-  { time: '04:00', Gemini: 70, Claude: 110, DeepSeek: 180, Grok: 60, Perplexity: 350, Manus: 450, Antigravity: 200, 'Chat Z.Ai': 40 },
-  { time: '08:00', Gemini: 75, Claude: 115, DeepSeek: 185, Grok: 65, Perplexity: 360, Manus: 460, Antigravity: 210, 'Chat Z.Ai': 45 },
-  { time: '12:00', Gemini: 90, Claude: 130, DeepSeek: 200, Grok: 80, Perplexity: 380, Manus: 480, Antigravity: 230, 'Chat Z.Ai': 55 },
-  { time: '16:00', Gemini: 85, Claude: 125, DeepSeek: 190, Grok: 75, Perplexity: 370, Manus: 470, Antigravity: 220, 'Chat Z.Ai': 50 },
-  { time: '20:00', Gemini: 72, Claude: 112, DeepSeek: 182, Grok: 62, Perplexity: 355, Manus: 455, Antigravity: 205, 'Chat Z.Ai': 42 },
-]
-
-const comparisonTable = [
-  { model: 'Antigravity', reasoning: 98.0, extraction: 99.0, cost: '$0.00', compliance: '99.9%', status: 'Ativo' },
-  { model: 'Claude', reasoning: 96.0, extraction: 95.0, cost: '$3.00', compliance: '98.0%', status: 'Ativo' },
-  { model: 'Gemini', reasoning: 93.0, extraction: 94.0, cost: '$1.25', compliance: '92.0%', status: 'Ativo' },
-  { model: 'Perplexity', reasoning: 82.0, extraction: 97.0, cost: '$2.00', compliance: '90.0%', status: 'Ativo' },
-  { model: 'DeepSeek', reasoning: 91.0, extraction: 88.0, cost: '$0.14', compliance: '82.0%', status: 'Ativo' },
-  { model: 'Manus', reasoning: 90.0, extraction: 85.0, cost: '$5.00', compliance: '80.0%', status: 'Ativo' },
-  { model: 'Grok', reasoning: 88.0, extraction: 84.0, cost: '$1.50', compliance: '75.0%', status: 'Ativo' },
-  { model: 'Chat Z.Ai', reasoning: 78.0, extraction: 76.0, cost: '$0.50', compliance: '80.0%', status: 'Pendente' },
-]
-
 import { useNavigate } from 'react-router-dom'
 import { useEvaluation } from '../contexts/EvaluationContext'
+import { useComparisonData } from '../contexts/ComparisonDataContext'
 
 const availableModels = [
   { key: 'Antigravity', color: '#ff00cc' },
@@ -68,6 +39,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function Comparacao() {
   const navigate = useNavigate();
   const { radarData } = useEvaluation();
+  const { benchmarkData, latencyTimeline, comparisonTable, isCustomData, uploadMeta, resetToDefaults } = useComparisonData();
   const [activeModels, setActiveModels] = useState(['Antigravity', 'Claude']);
   const [viewMode, setViewMode] = useState('2D');
   const [hoveredData, setHoveredData] = useState(null);
@@ -88,6 +60,39 @@ export default function Comparacao() {
           Análise comparativa detalhada entre os principais motores de IA em benchmarks clínicos.
         </p>
       </div>
+
+      {/* Data Source Banner */}
+      {isCustomData && (
+        <div className="card animate-in" style={{
+          marginBottom: 'var(--space-4)',
+          borderLeft: '3px solid var(--primary)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-3)',
+          padding: 'var(--space-3) var(--space-4)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <span className="material-symbols-outlined" style={{ color: 'var(--primary)', fontSize: '1.2rem' }}>cloud_done</span>
+            <div>
+              <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--primary)' }}>
+                Dados Personalizados Ativos
+              </span>
+              <p style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)', marginTop: 2 }}>
+                {uploadMeta?.summary?.join(' · ') || 'Upload via CSV'} — {uploadMeta?.uploadedAt ? new Date(uploadMeta.uploadedAt).toLocaleString('pt-BR') : ''}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={resetToDefaults}
+            style={{
+              background: 'rgba(255,113,108,0.1)', color: 'var(--error)', border: '1px solid rgba(255,113,108,0.3)',
+              padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>restart_alt</span>
+            Resetar para Padrão
+          </button>
+        </div>
+      )}
 
       {/* Charts */}
       <div className="charts-grid" style={{ marginBottom: 'var(--space-6)' }}>
