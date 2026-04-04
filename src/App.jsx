@@ -10,8 +10,10 @@ import PubMed from './pages/PubMed'
 import Upload from './pages/Upload'
 import MetricasLive from './pages/MetricasLive'
 import Comparacao from './pages/Comparacao'
+import PainelAvaliativo from './pages/PainelAvaliativo'
 import Radar from './pages/Radar'
 import BaseHistorica from './pages/BaseHistorica'
+import DashboardAlternativa from './pages/DashboardAlternativa'
 
 export default function App() {
   const { user, signOut } = useAuth()
@@ -31,8 +33,10 @@ export default function App() {
             <Route path="/upload" element={<Upload />} />
             <Route path="/metricas" element={<MetricasLive />} />
             <Route path="/comparacao" element={<Comparacao />} />
+            <Route path="/avaliacao" element={<PainelAvaliativo />} />
             <Route path="/radar" element={<Radar />} />
             <Route path="/historico" element={<BaseHistorica />} />
+            <Route path="/dashboard-alternativa" element={<DashboardAlternativa />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

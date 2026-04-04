@@ -35,14 +35,8 @@ const comparisonTable = [
   { model: 'Chat Z.Ai', reasoning: 78.0, extraction: 76.0, cost: '$0.50', compliance: '80.0%', status: 'Pendente' },
 ]
 
-const radarData = [
-  { attribute: 'Raciocínio', 'Gemini': 93, 'Claude': 96, 'DeepSeek': 91, 'Grok': 88, 'Perplexity': 82, 'Manus': 90, 'Antigravity': 98, 'Chat Z.Ai': 78 },
-  { attribute: 'Criatividade', 'Gemini': 90, 'Claude': 92, 'DeepSeek': 85, 'Grok': 89, 'Perplexity': 70, 'Manus': 88, 'Antigravity': 95, 'Chat Z.Ai': 75 },
-  { attribute: 'Confiabilidade', 'Gemini': 94, 'Claude': 95, 'DeepSeek': 88, 'Grok': 84, 'Perplexity': 97, 'Manus': 85, 'Antigravity': 98, 'Chat Z.Ai': 76 },
-  { attribute: 'Usabilidade', 'Gemini': 95, 'Claude': 90, 'DeepSeek': 80, 'Grok': 85, 'Perplexity': 91, 'Manus': 82, 'Antigravity': 96, 'Chat Z.Ai': 88 },
-  { attribute: 'Segurança', 'Gemini': 92, 'Claude': 98, 'DeepSeek': 82, 'Grok': 75, 'Perplexity': 90, 'Manus': 80, 'Antigravity': 99, 'Chat Z.Ai': 80 },
-  { attribute: 'Potencial Saúde', 'Gemini': 95, 'Claude': 96, 'DeepSeek': 86, 'Grok': 82, 'Perplexity': 92, 'Manus': 84, 'Antigravity': 97, 'Chat Z.Ai': 75 },
-]
+import { useNavigate } from 'react-router-dom'
+import { useEvaluation } from '../contexts/EvaluationContext'
 
 const availableModels = [
   { key: 'Antigravity', color: '#ff00cc' },
@@ -71,6 +65,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function Comparacao() {
+  const navigate = useNavigate();
+  const { radarData } = useEvaluation();
   const [activeModels, setActiveModels] = useState(['Antigravity', 'Claude']);
   const [viewMode, setViewMode] = useState('2D');
   const [hoveredData, setHoveredData] = useState(null);
@@ -197,9 +193,8 @@ export default function Comparacao() {
             {availableModels.map(m => {
               const isActive = activeModels.includes(m.key)
               return (
-                <button 
+                <div
                   key={m.key}
-                  onClick={() => toggleModel(m.key)}
                   style={{
                     padding: '6px 12px',
                     borderRadius: 'var(--radius-full)',
@@ -208,16 +203,31 @@ export default function Comparacao() {
                     color: isActive ? m.color : 'var(--on-surface-variant)',
                     fontSize: '0.8125rem',
                     fontWeight: 600,
-                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px'
                   }}
                 >
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? m.color : 'var(--on-surface-variant)' }}></span>
-                  {m.key}
-                </button>
+                  <div 
+                    onClick={() => toggleModel(m.key)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? m.color : 'var(--on-surface-variant)' }}></span>
+                    {m.key}
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); navigate('/avaliacao', { state: { selectedModel: m.key } }); }}
+                    style={{
+                      background: 'transparent', border: 'none', padding: 0,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center',
+                      color: 'var(--primary)', marginLeft: '4px', opacity: isActive ? 1 : 0.5
+                    }}
+                    title="Aprofundamento Científico"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>science</span>
+                  </button>
+                </div>
               )
             })}
           </div>
@@ -277,9 +287,24 @@ export default function Comparacao() {
             <span className="material-symbols-outlined" style={{ color: 'var(--tertiary)' }}>bolt</span>
           </div>
           <div>
-            <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-2)' }}>
-              Análise de IA: Eficiência de Resposta
-            </h4>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <h4 style={{ fontWeight: 700, marginBottom: 'var(--space-2)' }}>
+                  Análise de IA: Eficiência de Resposta
+                </h4>
+                <button
+                  onClick={() => navigate('/avaliacao', { state: { selectedModel: 'Antigravity' } })}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    background: 'rgba(0, 226, 238, 0.1)', color: 'var(--primary)',
+                    border: '1px solid rgba(0, 226, 238, 0.3)', padding: '4px 12px',
+                    borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600,
+                    cursor: 'pointer', marginBottom: 'var(--space-2)'
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '0.9rem' }}>science</span>
+                  Ver Painel Avaliativo
+                </button>
+              </div>
             <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.875rem', lineHeight: 1.6 }}>
               O modelo <strong style={{ color: 'var(--primary)' }}>Antigravity</strong> apresenta o melhor equilíbrio sistêmico entre 
               as 6 diretrizes clínicas, com segurança perfeita (99). O <strong style={{ color: '#ac89ff' }}>Claude</strong> domina na 

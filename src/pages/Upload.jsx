@@ -166,6 +166,18 @@ export default function Upload() {
 
   const mapping = COLUMN_MAPPINGS[selectedTable]
 
+  // Cálculo dinâmico do storage em tempo real baseado nos uploads processados
+  const baseStorageMB = 138.5; // Espaço utilizado base no Supabase
+  const uploadedMB = recentUploads.reduce((acc, u) => {
+    if (!u.file_size) return acc;
+    const mb = parseFloat(u.file_size.replace(/[^0-9.]/g, ''));
+    return acc + (isNaN(mb) ? 0 : mb);
+  }, 0);
+  
+  const totalUsedMB = (baseStorageMB + uploadedMB).toFixed(1);
+  const maxStorageMB = 1000.0;
+  const storagePercentage = Math.min(((totalUsedMB / maxStorageMB) * 100), 100).toFixed(1);
+
   return (
     <div>
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
@@ -321,7 +333,7 @@ export default function Upload() {
           {[
             { label: 'Supabase Connection', value: isSupabaseConfigured() ? 'Online' : 'Não configurado', color: isSupabaseConfigured() ? 'var(--success)' : 'var(--warning)', width: isSupabaseConfigured() ? 100 : 0 },
             { label: 'HIPAA Compliance', value: '100%', color: 'var(--success)', width: 100 },
-            { label: 'Storage Used', value: '72%', color: 'var(--warning)', width: 72 },
+            { label: 'Storage Used', value: `${totalUsedMB}MB / ${maxStorageMB}MB`, color: storagePercentage > 80 ? 'var(--error)' : 'var(--warning)', width: storagePercentage, transition: true },
           ].map((m, i) => (
             <div key={i} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
@@ -329,7 +341,7 @@ export default function Upload() {
                 <span style={{ fontWeight: 700, color: m.color, fontSize: '0.875rem' }}>{m.value}</span>
               </div>
               <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${m.width}%`, background: m.color }} />
+                <div className="progress-fill" style={{ width: `${m.width}%`, background: m.color, ...(m.transition ? { transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' } : {}) }} />
               </div>
             </div>
           ))}

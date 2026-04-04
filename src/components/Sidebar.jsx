@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import './Sidebar.css'
 
 const navItems = [
@@ -8,8 +8,11 @@ const navItems = [
   { path: '/upload',     icon: 'upload_file',     label: 'Upload & Export' },
   { path: '/metricas',   icon: 'monitoring',      label: 'Métricas Live' },
   { path: '/comparacao', icon: 'compare_arrows',  label: 'Comparação de IAs' },
+  { path: '/avaliacao',  icon: 'gavel',           label: 'Painel Avaliativo' },
   { path: '/radar',      icon: 'new_releases',    label: 'Radar de Novidades' },
   { path: '/historico',  icon: 'history',         label: 'Base Histórica' },
+  { path: '/registro',   icon: 'note_add',        label: 'Novo Registro' },
+  { path: '/dashboard-alternativa', icon: 'view_in_ar', label: 'IA Benchmark 3D' },
 ]
 
 export default function Sidebar({ user, onLogin, onLogout }) {

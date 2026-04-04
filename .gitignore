@@ -1,1 +1,16 @@
 node_modules
+.env
+api_test_response.json
+perplexity_check.json
+*.log
+dist
+.vercel
+.next
+*.mp4
+*.webp
+*.png
+*.jpg
+*.jpeg
+*.gif
+.DS_Store
+Thumbs.db
