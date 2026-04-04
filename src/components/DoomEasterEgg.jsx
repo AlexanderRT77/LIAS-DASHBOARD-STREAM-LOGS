@@ -44,10 +44,10 @@ export default function DoomEasterEgg({ onClose }) {
           </button>
         </div>
 
-        {/* Emulador do Doom JS-DOS */}
+        {/* Emulador do Doom (Internet Archive MS-DOS Emulator) */}
         <div style={{ flex: 1, backgroundColor: '#000', position: 'relative' }}>
           <iframe 
-            src="https://dos.zone/player/?bundleUrl=https%3A%2F%2Fcdn.dos.zone%2Fcustom%2Fdos%2Fdoom.jsdos"
+            src="https://archive.org/embed/msdos_Doom_1993?autoplay=1"
             style={{ width: '100%', height: '100%', border: 'none', background: '#000' }}
             allow="autoplay; fullscreen"
             title="Doom Easter Egg"
